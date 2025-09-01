@@ -1,11 +1,11 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "title": "Configure kickstart",
-    "$id": "http://nethserver.org/json-schema/task/input/kickstart/configure-module",
-    "description": "Configure kickstart",
+    "title": "Configure checkcle",
+    "$id": "http://nethserver.org/json-schema/task/input/checkcle/configure-module",
+    "description": "Configure checkcle",
     "examples": [
         {
-            "host": "kickstart.domain.org",
+            "host": "checkcle.domain.org",
             "http2https": true,
             "lets_encrypt": true
         }
@@ -19,7 +19,7 @@
     "properties": {
         "host": {
             "type": "string",
-            "description": "Host name for the application, like 'kickstart.domain.org'",
+            "description": "Host name for the application, like 'checkcle.domain.org'",
             "format": "hostname",
             "pattern": "\\."
         },
