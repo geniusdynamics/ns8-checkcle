@@ -1,58 +1,51 @@
-# ns8-checkcle
+# NS8 Checkcle Module
 
-This is a template module for [NethServer 8](https://github.com/NethServer/ns8-core).
-To start a new module from it:
+[![Build Status](https://github.com/geniusdynamics/ns8-checkcle/workflows/test-module/badge.svg)](https://github.com/geniusdynamics/ns8-checkcle/actions)
+[![License](https://img.shields.io/github/license/geniusdynamics/ns8-checkcle)](LICENSE)
 
-1. Click on [Use this template](https://github.com/NethServer/ns8-checkcle/generate).
-   Name your repo with `ns8-` prefix (e.g. `ns8-mymodule`). 
-   Do not end your module name with a number, like ~~`ns8-baaad2`~~!
+A template module for [NethServer 8](https://github.com/geniusdynamics/ns8-core) that provides checkcle functionality.
 
-1. Clone the repository, enter the cloned directory and
-   [configure your GIT identity](https://git-scm.com/book/en/v2/Getting-Started-First-Time-Git-Setup#_your_identity)
+## Table of Contents
 
-1. Rename some references inside the repo:
-   ```
-   modulename=$(basename $(pwd) | sed 's/^ns8-//') &&
-   git mv imageroot/systemd/user/checkcle.service imageroot/systemd/user/${modulename}.service &&
-   git mv imageroot/systemd/user/checkcle-app.service imageroot/systemd/user/${modulename}-app.service && 
-   git mv tests/checkcle.robot tests/${modulename}.robot &&
-   sed -i "s/checkcle/${modulename}/g" $(find .github/ * -type f) &&
-   git commit -a -m "Repository initialization"
-   ```
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Usage](#usage)
+- [Uninstallation](#uninstallation)
+- [Smarthost Settings](#smarthost-settings)
+- [Debugging](#debugging)
+- [Testing](#testing)
+- [UI Translation](#ui-translation)
+- [License](#license)
 
-1. Edit this `README.md` file, by replacing this section with your module
-   description
+## Installation
 
-1. Adjust `.github/workflows` to your needs. `clean-registry.yml` might
-   need the proper list of image names to work correctly. Unused workflows
-   can be disabled from the GitHub Actions interface.
+Instantiate the module with the following command:
 
-1. Commit and push your local changes
-
-## Install
-
-Instantiate the module with:
-
-    add-module ghcr.io/nethserver/checkcle:latest 1
-
-The output of the command will return the instance name.
-Output example:
-
-    {"module_id": "checkcle1", "image_name": "checkcle", "image_url": "ghcr.io/nethserver/checkcle:latest"}
-
-## Configure
-
-Let's assume that the mattermost instance is named `checkcle1`.
-
-Launch `configure-module`, by setting the following parameters:
-- `host`: a fully qualified domain name for the application
-- `http2https`: enable or disable HTTP to HTTPS redirection (true/false)
-- `lets_encrypt`: enable or disable Let's Encrypt certificate (true/false)
-
-
-Example:
-
+```bash
+add-module ghcr.io/geniusdynamics/checkcle:latest 1
 ```
+
+The output will return the instance name, for example:
+
+```json
+{
+  "module_id": "checkcle1",
+  "image_name": "checkcle",
+  "image_url": "ghcr.io/geniusdynamics/checkcle:latest"
+}
+```
+
+## Configuration
+
+Assuming the instance is named `checkcle1`, launch `configure-module` with the following parameters:
+
+- `host`: Fully qualified domain name for the application
+- `http2https`: Enable or disable HTTP to HTTPS redirection (true/false)
+- `lets_encrypt`: Enable or disable Let's Encrypt certificate (true/false)
+
+Example configuration:
+
+```bash
 api-cli run configure-module --agent module/checkcle1 --data - <<EOF
 {
   "host": "checkcle.domain.com",
@@ -62,110 +55,88 @@ api-cli run configure-module --agent module/checkcle1 --data - <<EOF
 EOF
 ```
 
-The above command will:
-- start and configure the checkcle instance
-- configure a virtual host for trafik to access the instance
+This command will:
 
-## Get the configuration
-You can retrieve the configuration with
+- Start and configure the checkcle instance
+- Configure a virtual host for Traefik to access the instance
 
-```
+## Usage
+
+### Get Configuration
+
+Retrieve the current configuration:
+
+```bash
 api-cli run get-configuration --agent module/checkcle1
 ```
 
-## Uninstall
+### Update Module
+
+To update the module to a new version or image, use the following command:
+
+```bash
+api-cli run update-module --data '{
+  "module_url": "ghcr.io/geniusdynamics/checkcle:latest",
+  "instances": ["checkcle1"],
+  "force": true
+}'
+```
+
+This will update the specified instances to the new module URL.
+
+## Uninstallation
 
 To uninstall the instance:
 
-    remove-module --no-preserve checkcle1
-
-## Smarthost setting discovery
-
-Some configuration settings, like the smarthost setup, are not part of the
-`configure-module` action input: they are discovered by looking at some
-Redis keys.  To ensure the module is always up-to-date with the
-centralized [smarthost
-setup](https://nethserver.github.io/ns8-core/core/smarthost/) every time
-checkcle starts, the command `bin/discover-smarthost` runs and refreshes
-the `state/smarthost.env` file with fresh values from Redis.
-
-Furthermore if smarthost setup is changed when checkcle is already
-running, the event handler `events/smarthost-changed/10reload_services`
-restarts the main module service.
-
-See also the `systemd/user/checkcle.service` file.
-
-This setting discovery is just an example to understand how the module is
-expected to work: it can be rewritten or discarded completely.
-
-## Debug
-
-some CLI are needed to debug
-
-- The module runs under an agent that initiate a lot of environment variables (in /home/checkcle1/.config/state), it could be nice to verify them
-on the root terminal
-
-    `runagent -m checkcle1 env`
-
-- you can become runagent for testing scripts and initiate all environment variables
-  
-    `runagent -m checkcle1`
-
- the path become : 
-```
-    echo $PATH
-    /home/checkcle1/.config/bin:/usr/local/agent/pyenv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/usr/
+```bash
+remove-module --no-preserve checkcle1
 ```
 
-- if you want to debug a container or see environment inside
- `runagent -m checkcle1`
- ```
-podman ps
-CONTAINER ID  IMAGE                                      COMMAND               CREATED        STATUS        PORTS                    NAMES
-d292c6ff28e9  localhost/podman-pause:4.6.1-1702418000                          9 minutes ago  Up 9 minutes  127.0.0.1:20015->80/tcp  80b8de25945f-infra
-d8df02bf6f4a  docker.io/library/mariadb:10.11.5          --character-set-s...  9 minutes ago  Up 9 minutes  127.0.0.1:20015->80/tcp  mariadb-app
-9e58e5bd676f  docker.io/library/nginx:stable-alpine3.17  nginx -g daemon o...  9 minutes ago  Up 9 minutes  127.0.0.1:20015->80/tcp  checkcle-app
+## Smarthost Settings
+
+Some configuration settings, like the smarthost setup, are discovered automatically by checking Redis keys. The module ensures it stays up-to-date with the centralized [smarthost setup](https://geniusdynamics.github.io/ns8-core/core/smarthost/).
+
+- The `bin/discover-smarthost` command refreshes the `state/smarthost.env` file with fresh values from Redis on startup.
+- If smarthost settings change while the module is running, the event handler `events/smarthost-changed/10reload_services` restarts the main service.
+- Refer to `systemd/user/checkcle.service` for more details.
+
+This is an example implementation and can be customized or removed as needed.
+
+## Debugging
+
+Use these CLI commands for debugging:
+
+### Verify Environment Variables
+
+Check environment variables set by the agent:
+
+```bash
+runagent -m checkcle1 env
 ```
 
-you can see what environment variable is inside the container
-```
-podman exec  checkcle-app env
-PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-TERM=xterm
-PKG_RELEASE=1
-MARIADB_DB_HOST=127.0.0.1
-MARIADB_DB_NAME=checkcle
-MARIADB_IMAGE=docker.io/mariadb:10.11.5
-MARIADB_DB_TYPE=mysql
-container=podman
-NGINX_VERSION=1.24.0
-NJS_VERSION=0.7.12
-MARIADB_DB_USER=checkcle
-MARIADB_DB_PASSWORD=checkcle
-MARIADB_DB_PORT=3306
-HOME=/root
+### Become Runagent
+
+Switch to the runagent environment for testing:
+
+```bash
+runagent -m checkcle1
 ```
 
-you can run a shell inside the container
+The PATH will be updated to:
 
 ```
-podman exec -ti   checkcle-app sh
-/ # 
+/home/checkcle1/.config/bin:/usr/local/agent/pyenv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/usr/
 ```
-## Testing
 
-Test the module using the `test-module.sh` script:
+### Inspect Containers
 
+Translations are managed with [Weblate](https://hosted.weblate.org/projects/ns8/).
 
-    ./test-module.sh <NODE_ADDR> ghcr.io/nethserver/checkcle:latest
+To set up the translation process:
 
-The tests are made using [Robot Framework](https://robotframework.org/)
+- Add the [GitHub Weblate app](https://docs.weblate.org/en/latest/admin/continuous.html#github-setup) to your repository
+- Add your repository to [hosted.weblate.org](https://hosted.weblate.org) or ask a NethServer developer to add it to the NS8 Weblate project
 
-## UI translation
+## License
 
-Translated with [Weblate](https://hosted.weblate.org/projects/ns8/).
-
-To setup the translation process:
-
-- add [GitHub Weblate app](https://docs.weblate.org/en/latest/admin/continuous.html#github-setup) to your repository
-- add your repository to [hosted.weblate.org]((https://hosted.weblate.org) or ask a NethServer developer to add it to ns8 Weblate project
+This project is licensed under the terms specified in the [LICENSE](LICENSE) file.
