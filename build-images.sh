@@ -17,7 +17,8 @@ reponame="checkcle"
 # Node.js 25+ no longer ships Corepack, install it from npm
 # renovate: datasource=npm packageName=corepack
 corepack_version=0.36.0
-app_version="v1.6.0"
+# renovate: datasource=docker packageName=docker.io/operacle/checkcle
+app_version=v1.6.0
 # Create a new empty container image
 container=$(buildah from scratch)
 
