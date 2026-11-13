@@ -14,14 +14,19 @@ images=()
 repobase="${REPOBASE:-ghcr.io/geniusdynamics}"
 # Configure the image name
 reponame="checkcle"
-app_version="v1.6.0"
+# Node.js 25+ no longer ships Corepack, install it from npm
+# renovate: datasource=npm packageName=corepack
+corepack_version=0.36.0
+# renovate: datasource=docker packageName=docker.io/operacle/checkcle
+app_version=v1.6.0
 # Create a new empty container image
 container=$(buildah from scratch)
 
 # Reuse existing nodebuilder-checkcle container, to speed up builds
 if ! buildah containers --format "{{.ContainerName}}" | grep -q nodebuilder-checkcle; then
     echo "Pulling NodeJS runtime..."
-    buildah from --name nodebuilder-checkcle -v "${PWD}:/usr/src:Z" docker.io/library/node:lts
+    buildah from --name nodebuilder-checkcle -v "${PWD}:/usr/src:Z" docker.io/library/node:26.13.0-slim
+    buildah run nodebuilder-checkcle sh -c "npm install -g corepack@${corepack_version} && corepack enable"
 fi
 
 echo "Build static UI files with node..."
@@ -45,6 +50,7 @@ buildah config --entrypoint=/ \
     --label="org.nethserver.authorizations=traefik@node:routeadm" \
     --label="org.nethserver.tcp-ports-demand=1" \
     --label="org.nethserver.rootfull=0" \
+    --label="org.nethserver.min-core=3.0.0" \
     --label="org.nethserver.images=docker.io/operacle/checkcle:$app_version" \
     "${container}"
 # Commit the image
